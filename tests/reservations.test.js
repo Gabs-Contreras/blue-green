@@ -2,22 +2,18 @@ const request = require('supertest');
 const app = require('../src/index');
 
 describe('Reservation Endpoints', () => {
-  let server;
-
-  beforeAll((done) => {
-    server = app.listen(3001, done);
-  });
-
-  afterAll((done) => {
-    server.close(done);
+  beforeEach(() => {
+    // Limpiar reservas antes de cada test
+    const appInstance = require('../src/index');
+    appInstance._reservations = []; // Resetear si fuera necesario
   });
 
   it('POST /api/reservations - debería crear una reserva válida', async () => {
     const reservationData = {
       cabinId: 1,
-      userName: "Juan Pérez",
-      checkIn: "2024-12-01",
-      checkOut: "2024-12-05"
+      userName: 'Juan Pérez',
+      checkIn: '2024-12-01',
+      checkOut: '2024-12-05'
     };
 
     const res = await request(app)
@@ -32,8 +28,7 @@ describe('Reservation Endpoints', () => {
 
   it('POST /api/reservations - debería fallar con datos incompletos', async () => {
     const invalidData = {
-      cabinId: 1,
-      // Faltan userName, checkIn, checkOut
+      cabinId: 1
     };
 
     const res = await request(app)

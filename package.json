@@ -6,10 +6,11 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix"
+    "test": "jest --forceExit --detectOpenHandles",
+    "test:watch": "jest --watch --forceExit",
+    "test:coverage": "jest --coverage --forceExit",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -27,6 +28,14 @@
   "jest": {
     "testEnvironment": "node",
     "collectCoverage": true,
-    "coverageDirectory": "coverage"
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov", "html"],
+    "testMatch": ["**/tests/**/*.test.js"],
+    "verbose": true,
+    "forceExit": true,
+    "detectOpenHandles": true,
+    "clearMocks": true,
+    "resetMocks": true,
+    "restoreMocks": true
   }
 }

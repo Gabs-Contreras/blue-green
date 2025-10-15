@@ -57,14 +57,20 @@ app.get('/api/reservations', (req, res) => {
 });
 
 // Manejo de errores
-app.use((err, req, res, /*next*/) => {
+app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/api/health`);
-});
-
-module.exports = app; // Para testing
+// Solo iniciar el servidor si no estamos en modo test
+if (require.main === module) {
+  const server = app.listen(PORT, () => {
+    console.log('Servidor corriendo en puerto', PORT);
+    console.log('Health check: http://localhost:' + PORT + '/api/health');
+  });
+  
+  module.exports = server;
+} else {
+  // Para testing, exportamos solo la app sin iniciar el servidor
+  module.exports = app;
+}
