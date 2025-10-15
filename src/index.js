@@ -57,7 +57,7 @@ app.get('/api/reservations', (req, res) => {
 });
 
 // Manejo de errores
-app.use((err, req, res, next) => {
+app.use((err, req, res, ) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Error interno del servidor' });
 });
