@@ -1,0 +1,10 @@
+
+## Desarrollo
+
+### Backend
+```bash
+cd arroyo-back
+npm install
+npm run dev          # Desarrollo
+npm test            # Ejecutar pruebas
+npm run lint        # Verificar código

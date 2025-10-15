@@ -12,8 +12,8 @@ app.use(express.json());
 // Base de datos en memoria para pruebas
 let reservations = [];
 let cabins = [
-  { id: 1, name: "Cabaña Río", price: 800, available: true },
-  { id: 2, name: "Cabaña Montaña", price: 1200, available: true }
+  { id: 1, name: 'Cabaña Río', price: 800, available: true },
+  { id: 2, name: 'Cabaña Montaña', price: 1200, available: true }
 ];
 
 // Rutas básicas
@@ -57,7 +57,7 @@ app.get('/api/reservations', (req, res) => {
 });
 
 // Manejo de errores
-app.use((err, req, res, next) => {
+app.use((err, req, res, /*next*/) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Error interno del servidor' });
 });
