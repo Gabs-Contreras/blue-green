@@ -1,0 +1,89 @@
+name: CI Pipeline - Arroyo Seco
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: arroyo-back/package-lock.json
+    
+    - name: Instalar dependencias Backend
+      run: |
+        cd arroyo-back
+        npm ci
+    
+    - name: Run ESLint Backend
+      run: |
+        cd arroyo-back
+        npm run lint
+    
+    - name: Run Tests Backend
+      run: |
+        cd arroyo-back
+        npm test
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        directory: arroyo-back/coverage
+        flags: backend
+        name: backend-coverage
+
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    if: always() # Ejecutar incluso si falla backend
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        cache-dependency-path: arroyo-front/package-lock.json
+    
+    - name: Instalar dependencias Frontend
+      run: |
+        cd arroyo-front
+        npm ci
+    
+    - name: Build Frontend
+      run: |
+        cd arroyo-front
+        npm run build
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+    
+    - name: Run Security Audit
+      run: |
+        cd arroyo-back && npm audit
+        cd ../arroyo-front && npm audit
