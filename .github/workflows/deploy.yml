@@ -1,0 +1,106 @@
+name: CI + Blue-Green Deployment - Arroyo Seco
+
+on:
+  push:
+    branches: [main, develop, master, feature/*]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+
+  # =====================================================
+  # 1. TEST BACKEND (ESLint + Jest + Supertest)
+  #    Se ejecuta en develop y feature/**
+  # =====================================================
+  test-backend:
+    name: Ejecutar ESLint + 5 tests (Supertest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint
+      
+      - name: Execute tests with Jest + Supertest
+        run: npm test
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+
+  # =====================================================
+  # 2. BLUE-GREEN DEPLOYMENT (Solo para main/master)
+  # =====================================================
+  deploy:
+    name: Blue-Green Deployment
+    needs: test-backend        # Solo despliega si los tests pasan
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Conectar a VPS y ejecutar despliegue
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo " Entrando al servidor..."
+            cd ${{ secrets.APP_PATH }}
+
+            echo " Detectando puerto activo en Nginx..."
+            ACTIVE_PORT=$(grep -A1 "upstream app_upstream" /etc/nginx/sites-available/app.conf | grep -o "300[12]")
+
+            echo " Puerto activo actual: $ACTIVE_PORT"
+
+            if [ "$ACTIVE_PORT" = "3001" ]; then
+              DEPLOY_ENV="green"
+              DEPLOY_PORT="3002"
+            else
+              DEPLOY_ENV="blue"
+              DEPLOY_PORT="3001"
+            fi
+
+            echo " Nuevo despliegue irá a: $DEPLOY_ENV en puerto $DEPLOY_PORT"
+
+            echo " Actualizando código..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo " Dando permisos a scripts..."
+            chmod +x scripts/*.sh
+
+            echo " Ejecutando deploy.sh..."
+            ./scripts/deploy.sh $DEPLOY_ENV
+
+            echo " Esperando a que la app levante..."
+            sleep 5
+
+            echo " Realizando health check en $DEPLOY_PORT..."
+            if curl -s http://127.0.0.1:$DEPLOY_PORT/health > /dev/null; then
+              echo " Nuevo entorno saludable. Aplicando switch..."
+              ./scripts/switch.sh $DEPLOY_ENV
+              echo " Blue-Green Deployment completado con éxito ✔"
+            else
+              echo "
+               Health check fallido. Cancelando switch."
+              exit 1
+            fi
