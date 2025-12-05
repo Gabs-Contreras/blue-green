@@ -16,19 +16,22 @@ let cabins = [
   { id: 2, name: 'Cabaña Montaña', price: 1200, available: true }
 ];
 
-// Rutas básicas
+// ------- RUTAS -------
+
+// Health Check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Servidor funcionando' });
 });
 
+// Obtener cabañas
 app.get('/api/cabins', (req, res) => {
   res.json(cabins);
 });
 
+// Crear reserva
 app.post('/api/reservations', (req, res) => {
   const { cabinId, userName, checkIn, checkOut } = req.body;
   
-  // Validación básica
   if (!cabinId || !userName || !checkIn || !checkOut) {
     return res.status(400).json({ error: 'Faltan campos requeridos' });
   }
@@ -52,17 +55,18 @@ app.post('/api/reservations', (req, res) => {
   res.status(201).json(reservation);
 });
 
+// Obtener reservas
 app.get('/api/reservations', (req, res) => {
   res.json(reservations);
 });
 
-// Manejo de errores
-app.use((err, req, res, ) => {
+// ------- MANEJO DE ERRORES -------
+app.use((err, req, res) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-// Solo iniciar el servidor si no estamos en modo test
+// ------- INICIAR SERVIDOR -------
 if (require.main === module) {
   const server = app.listen(PORT, () => {
     console.log('Servidor corriendo en puerto', PORT);
@@ -71,6 +75,5 @@ if (require.main === module) {
   
   module.exports = server;
 } else {
-  // Para testing, exportamos solo la app sin iniciar el servidor
   module.exports = app;
 }
